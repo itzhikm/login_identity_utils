@@ -35,6 +35,17 @@ def create_tables(conn):
     logger.info("Created identity_links and login_events tables")
 
 
+def ensure_login_events_columns(conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            "ALTER TABLE login_events "
+            "ADD COLUMN IF NOT EXISTS event_json VARCHAR, "
+            "ADD COLUMN IF NOT EXISTS source_topic VARCHAR"
+        )
+    conn.commit()
+    logger.info("Ensured login_events has event_json and source_topic columns")
+
+
 def ensure_default_partition(conn):
     stmt = sql.SQL(
         "CREATE TABLE IF NOT EXISTS {name} "
@@ -78,6 +89,7 @@ def main():
     conn = get_connection()
     try:
         create_tables(conn)
+        ensure_login_events_columns(conn)
         ensure_default_partition(conn)
         ensure_daily_partitions(conn)
     finally:
